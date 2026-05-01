@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AETHER</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="particles.js" defer></script>
+  <script src="config.js"  defer></script>
+  <script src="state.js"   defer></script>
+  <script src="engine.js"  defer></script>
+  <script src="arbol.js"   defer></script>
+  <script src="ui.js"      defer></script>
+  <script src="audio.js"   defer></script>
+  <script src="main.js"    defer></script>
+  <script src="intro.js"   defer></script>
+  <script src="dev.js"     defer></script>
+</head>
+<body>
+
+  <canvas id="bgCanvas"></canvas>
+
+  <!-- INTRO -->
+  <div id="vistaIntro">
+    <div id="introContent">
+      <div id="introTitle">AETHER</div>
+      <div id="introFrase">
+        <span class="introLinea">El tejido de la realidad se deshace en silencio.</span>
+        <span class="introLinea">Solo una presencia puede detenerlo.</span>
+        <span class="introLinea">Ya llegaste.</span>
+      </div>
+      <div id="introDespertar">
+        <span id="introDespertarText">DESPERTAR</span>
+        <span id="introDespertarHint">toca en cualquier lugar</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- JUEGO -->
+  <div id="vistaJuego">
+
+    <div id="mobileTabs">
+      <button class="mobileTab active" data-tab="main">NUCLEO</button>
+      <button class="mobileTab" data-tab="gens">GENS</button>
+      <button class="mobileTab" data-tab="progreso">PROGRESO</button>
+    </div>
+
+    <div id="leftPanel" data-panel="progreso">
+      <div class="panelTitle">Progreso</div>
+      <div id="progresoContainer"></div>
+    </div>
+
+    <div id="main" data-panel="main">
+      <div id="cosmicContainer">
+        <div id="orb">
+          <div id="orbFill"></div>
+          <div id="orbParticles"></div>
+          <div id="orbRays"></div>
+        </div>
+      </div>
+      <div id="loreLine"></div>
+      <div id="energiasDisplay">
+        <div id="energia_flujo"    class="energiaItem"></div>
+        <div id="energia_pulso"    class="energiaItem"></div>
+        <div id="energia_cadencia" class="energiaItem"></div>
+      </div>
+      <div id="points"></div>
+      <div id="cdContainer">
+        <div id="cdBarBg"><div id="cdBar"></div></div>
+        <span id="cdText"></span>
+      </div>
+      <button id="clickBtn">GENERAR</button>
+      <div id="velocidadDots">
+        <div class="velDot" id="dot1"></div>
+        <div class="velDot" id="dot2"></div>
+        <div class="velDot" id="dot3"></div>
+      </div>
+      <button id="mejorarClickBtn">Mejorar Click</button>
+      <button id="recolectarBtn">
+        <span id="recolectarLabel">Recolectar</span>
+        <span id="recolectarBarWrap"><span id="recolectarBar"></span></span>
+      </button>
+      <div id="idleStats" style="display:none"><div id="tickspeedBig"></div></div>
+      <button id="prestigeBtn" style="display:none">FRACTURAR SEMI-AETHER</button>
+    </div>
+
+    <div id="rightPanel" data-panel="gens">
+      <div class="panelTitle">Generadores</div>
+      <div id="gensAContainer"></div>
+      <div class="panelDivider"></div>
+      <div id="panelBSection" style="display:none"></div>
+    </div>
+
+    <div id="barraInferior">
+      <button class="barraBtn" id="btnAbrirArbol"><span class="barraIcon">◈</span>TREE</button>
+      <button class="barraBtn" id="btnAbrirLogros"><span class="barraIcon">◆</span>ACHIEVEMENTS</button>
+      <button class="barraBtn" id="btnAbrirStats"><span class="barraIcon">◎</span>STATS</button>
+      <button class="barraBtn" id="btnAbrirAjustes"><span class="barraIcon">⚙</span>SETTINGS</button>
+    </div>
+
+    <!-- Tutorial box -->
+    <div id="tutorialBox">
+      <div id="tutText"></div>
+      <div id="tutFooter">
+        <span id="tutNum"></span>
+        <div id="tutBtns">
+          <button id="tutSkip">Omitir</button>
+          <button id="tutNext">Siguiente →</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- OVERLAY ARBOL -->
+  <div id="vistaArbol" class="vistaOverlay" style="display:none">
+    <div id="arbolHeader">
+      <div id="arbolTitulo"><span class="arbolTitleGlyph">◈</span><span id="txtArbolTitulo">SKILL TREE</span></div>
+      <div id="arbolOrbCount"></div>
+      <button id="btnCentrarArbol" class="btnSecundario">⊙ <span id="txtCentrar">CENTER</span></button>
+      <button id="btnCerrarArbol" class="btnCerrar">✕ <span id="txtCerrarArbol">CLOSE</span></button>
+    </div>
+    <div id="arbolLeyenda">
+      <span class="leyendaItem"><span class="leyendaCirculo"></span><span id="txtLeyendaClicks">Clicks</span></span>
+      <span class="leyendaItem"><span class="leyendaDiamante"></span><span id="txtLeyendaRec">Harvest</span></span>
+    </div>
+    <canvas id="arbolCanvas"></canvas>
+    <div id="nodoTooltip" style="display:none"></div>
+  </div>
+
+  <!-- OVERLAY LOGROS -->
+  <div id="vistaLogros" class="vistaOverlay" style="display:none">
+    <div id="logrosHeader">
+      <div id="logrosTitulo"><span class="arbolTitleGlyph" style="color:#f59e0b">◆</span>ACHIEVEMENTS</div>
+      <button id="btnCerrarLogros" class="btnCerrar">✕ <span id="txtCerrarLogros">CLOSE</span></button>
+    </div>
+    <div id="logrosGrid"></div>
+  </div>
+
+  <!-- OVERLAY AJUSTES -->
+  <div id="vistaAjustes" class="vistaOverlay" style="display:none">
+    <div id="ajustesHeader">
+      <div class="overlayTitulo"><span class="arbolTitleGlyph" style="color:#94a3b8">⚙</span><span id="txtAjustesTitulo">SETTINGS</span></div>
+      <button id="btnCerrarAjustes" class="btnCerrar">✕ <span id="txtCerrarAjustes">CLOSE</span></button>
+    </div>
+    <div id="ajustesContent"></div>
+  </div>
+
+  <!-- OVERLAY STATS -->
+  <div id="vistaStats" class="vistaOverlay" style="display:none">
+    <div id="statsHeader">
+      <div class="overlayTitulo"><span class="arbolTitleGlyph" style="color:#34d399">◎</span><span id="txtStatsTitulo">STATISTICS</span></div>
+      <button id="btnCerrarStats" class="btnCerrar">✕ <span id="txtCerrarStats">CLOSE</span></button>
+    </div>
+    <div id="statsContent"></div>
+  </div>
+
+  <!-- ADVERTENCIA PRESTIGE (se crea dinámicamente) -->
+
+  <!-- PANTALLA COLAPSO PRESTIGE -->
+  <div id="vistaColapso" style="display:none">
+    <canvas id="colapsoBg"></canvas>
+    <div id="colapsoContent">
+      <div id="colapsoOrb">
+        <canvas id="colapsoFragmento"></canvas>
+      </div>
+      <div id="colapsoTitulo">AETHER PRIMORDIAL</div>
+      <div id="colapsoSub">El tejido ha alcanzado su límite. La fractura es inevitable.</div>
+      <button id="colapsoBtn">Colapsar el Aether Primordial</button>
+    </div>
+  </div>
+
+</body>
+</html>
