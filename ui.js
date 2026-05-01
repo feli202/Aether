@@ -1045,11 +1045,21 @@ var UI = {
     // texto principal
     const ptsEl = document.getElementById("points");
     if (ptsEl) {
+      // Build structure once, update text only after that
+      if (!ptsEl._built) {
+        ptsEl._built = true;
+        ptsEl.innerHTML =
+          "<span id='ptsFrags' style='color:#00d4ff'></span>" +
+          "<span id='ptsOrbes' style='color:#a78bfa'></span>" +
+          "<span id='ptsTS'    style='opacity:0.7'></span>";
+      }
       const fps = calcFPS();
-      ptsEl.innerHTML =
-        "<span style='color:#00d4ff'>" + T("frags_label") + ": " + fmt(frags) + (fps > 0 ? " <small style='opacity:0.5;font-size:0.8em'>+" + fmt(fps) + "/s</small>" : "") + "</span>" +
-        "<span style='color:#a78bfa'>" + T("orbes_label") + ": " + fmt(S.orbes) + "</span>" +
-        (ts > 1.001 ? "<span style='opacity:0.7'>TS: x" + fmt(ts) + "</span>" : "");
+      const fEl = document.getElementById("ptsFrags");
+      const oEl = document.getElementById("ptsOrbes");
+      const tEl = document.getElementById("ptsTS");
+      if (fEl) fEl.textContent = T("frags_label") + ": " + fmt(frags) + (fps > 0 ? " +" + fmt(fps) + "/s" : "");
+      if (oEl) oEl.textContent = T("orbes_label") + ": " + fmt(S.orbes);
+      if (tEl) tEl.textContent = ts > 1.001 ? "TS: x" + fmt(ts) : "";
     }
 
     // energias — centradas y desplazadas según cuántas hay activas
@@ -1089,62 +1099,66 @@ var UI = {
     // boton mejorar click
     const mejBtn = document.getElementById("mejorarClickBtn");
     if (mejBtn) {
-      if (esAuto()) {
-        // post-auto: mostrar estado pero deshabilitado
-        mejBtn.style.display = "";
-        mejBtn.style.opacity = "0.35";
-        mejBtn.style.pointerEvents = "none";
-        mejBtn.innerHTML =
-          T("click_automatizado") + "<br>" +
-          "<span style='font-size:0.75em;opacity:0.6'>" + T("niv_label") + " " + nivelClickTotal() + " — " + poderClick() + " " + T("frags_click") + "</span><br>" +
-          "<span style='font-size:0.75em;color:#34d399'>" + T("nucleo_activo_label") + "</span>";
-      } else {
-        mejBtn.style.display = "";
-        const clickMax = S.click.nivelOrbes >= CONFIG.CLICK_MAX_ORBES;
-        if (clickMax) {
-          // Maximizado — solo frags siguen disponibles (temporales)
-          if (S.click.nivelFrags < MEJORAS_FRAGS) {
-            const cantidad = COSTO_FRAGS_POR_NIVEL[S.click.nivelFrags];
-            const puedeMej = S.fragmentos >= cantidad;
-            const barraFrags =
-              "<div style='margin-top:4px;background:rgba(0,212,255,0.15);border-radius:3px;height:3px;width:100%'>" +
-              "<div style='background:#00d4ff;height:3px;border-radius:3px;width:" + (S.click.nivelFrags / MEJORAS_FRAGS * 100) + "%'></div></div>";
-            mejBtn.innerHTML =
-              T("click_maximizado") + "<br>" +
-              "<span style='font-size:0.75em;opacity:0.7'>" + T("niv_label") + " " + nivelClickTotal() + " — " + poderClick() + " " + T("frags_click") + "</span><br>" +
-              "<span style='font-size:0.75em;color:#00d4ff'>" + cantidad + " " + T("frags_temp") + " <span style='opacity:0.5'>" + T("temp_label") + "</span></span>" +
-              barraFrags;
-            mejBtn.style.opacity = puedeMej ? "1" : "0.4";
-            mejBtn.style.pointerEvents = puedeMej ? "auto" : "none";
-          } else {
-            // Todo maximizado
-            mejBtn.style.opacity = "0.35";
-            mejBtn.style.pointerEvents = "none";
-            mejBtn.innerHTML =
-              T("click_maximizado") + "<br>" +
-              "<span style='font-size:0.75em;opacity:0.6'>" + T("niv_label") + " " + nivelClickTotal() + " — " + poderClick() + " " + T("frags_click") + "</span><br>" +
-              "<span style='font-size:0.75em;color:#34d399'>" + T("desbloquea_auto") + "</span>";
-          }
+      // Clave de estado — solo reconstruir HTML cuando esto cambia
+      const auto     = esAuto();
+      const clickMax = S.click.nivelOrbes >= CONFIG.CLICK_MAX_ORBES;
+      const fragMax  = S.click.nivelFrags >= MEJORAS_FRAGS;
+      const { tipo, cantidad } = costoMejoraClick();
+      const puede    = tipo === "fragmentos" ? S.fragmentos >= cantidad : S.orbes >= cantidad;
+      const stateKey = auto + "|" + clickMax + "|" + fragMax + "|" + S.click.nivelFrags + "|" + S.click.nivelOrbes + "|" + S.prefs?.idioma;
+
+      if (mejBtn._stateKey !== stateKey) {
+        mejBtn._stateKey = stateKey;
+        // Reconstruir HTML estático
+        if (auto) {
+          mejBtn.innerHTML =
+            T("click_automatizado") + "<br>" +
+            "<span style='font-size:0.75em;opacity:0.6'>" + T("niv_label") + " " + nivelClickTotal() + " — " + poderClick() + " " + T("frags_click") + "</span><br>" +
+            "<span style='font-size:0.75em;color:#34d399'>" + T("nucleo_activo_label") + "</span>";
+          mejBtn.style.opacity = "0.35";
+          mejBtn.style.pointerEvents = "none";
+        } else if (clickMax && fragMax) {
+          mejBtn.innerHTML =
+            T("click_maximizado") + "<br>" +
+            "<span style='font-size:0.75em;opacity:0.6'>" + T("niv_label") + " " + nivelClickTotal() + " — " + poderClick() + " " + T("frags_click") + "</span><br>" +
+            "<span style='font-size:0.75em;color:#34d399'>" + T("desbloquea_auto") + "</span>";
+          mejBtn.style.opacity = "0.35";
+          mejBtn.style.pointerEvents = "none";
+        } else if (clickMax) {
+          const c = COSTO_FRAGS_POR_NIVEL[S.click.nivelFrags];
+          mejBtn.innerHTML =
+            T("click_maximizado") + "<br>" +
+            "<span style='font-size:0.75em;opacity:0.7'>" + T("niv_label") + " " + nivelClickTotal() + " — " + poderClick() + " " + T("frags_click") + "</span><br>" +
+            "<span style='font-size:0.75em;color:#00d4ff'>" + c + " " + T("frags_temp") + " <span style='opacity:0.5'>" + T("temp_label") + "</span></span>" +
+            "<div style='margin-top:4px;background:rgba(0,212,255,0.15);border-radius:3px;height:3px'><div id='mejBarFill' style='background:#00d4ff;height:3px;border-radius:3px;width:0%'></div></div>";
         } else {
-          const { tipo, cantidad } = costoMejoraClick();
-          const esFrags  = tipo === "fragmentos";
-          const puedeMej = esFrags ? S.fragmentos >= cantidad : S.orbes >= cantidad;
+          const esFrags    = tipo === "fragmentos";
           const costoColor = esFrags ? "#00d4ff" : "#a78bfa";
           const costoLabel = esFrags
             ? cantidad + " Fragmentos <span style='opacity:0.5;font-size:0.85em'>(temp)</span>"
             : cantidad + " " + T("orbes_label") + " <span style='opacity:0.5;font-size:0.85em'>" + S.click.nivelOrbes + "/" + CONFIG.CLICK_MAX_ORBES + "</span>";
-          const barraFrags = esFrags
-            ? "<div style='margin-top:4px;background:rgba(0,212,255,0.15);border-radius:3px;height:3px;width:100%'>" +
-              "<div style='background:#00d4ff;height:3px;border-radius:3px;width:" + (S.click.nivelFrags / MEJORAS_FRAGS * 100) + "%'></div></div>"
-            : "<div style='margin-top:4px;background:rgba(167,139,250,0.15);border-radius:3px;height:3px;width:100%'>" +
-              "<div style='background:#a78bfa;height:3px;border-radius:3px;width:" + (S.click.nivelOrbes / CONFIG.CLICK_MAX_ORBES * 100) + "%'></div></div>";
+          const barColor = esFrags ? "#00d4ff" : "#a78bfa";
+          const barBg    = esFrags ? "rgba(0,212,255,0.15)" : "rgba(167,139,250,0.15)";
           mejBtn.innerHTML =
             T("mejorar_click") + "<br>" +
             "<span style='font-size:0.75em;opacity:0.7'>" + T("niv") + " " + nivelClickTotal() + " — " + poderClick() + " " + T("frags_click") + "</span><br>" +
             "<span style='font-size:0.75em;color:" + costoColor + "'>" + costoLabel + "</span>" +
-            barraFrags;
-          mejBtn.style.opacity = puedeMej ? "1" : "0.4";
-          mejBtn.style.pointerEvents = puedeMej ? "auto" : "none";
+            "<div style='margin-top:4px;background:" + barBg + ";border-radius:3px;height:3px'><div id='mejBarFill' style='background:" + barColor + ";height:3px;border-radius:3px;width:0%'></div></div>";
+        }
+      }
+
+      // Actualizar solo opacidad y barra — sin tocar innerHTML
+      if (!auto && !(clickMax && fragMax)) {
+        mejBtn.style.opacity = puede ? "1" : "0.4";
+        mejBtn.style.pointerEvents = puede ? "auto" : "none";
+        const fill = document.getElementById("mejBarFill");
+        if (fill) {
+          const pct = clickMax
+            ? (S.click.nivelFrags / MEJORAS_FRAGS * 100)
+            : tipo === "fragmentos"
+              ? Math.min(100, S.fragmentos / cantidad * 100)
+              : Math.min(100, S.click.nivelOrbes / CONFIG.CLICK_MAX_ORBES * 100);
+          fill.style.width = pct + "%";
         }
       }
     }
