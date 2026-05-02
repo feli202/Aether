@@ -106,5 +106,5 @@ const ParticlesBG = {
   },
 };
 
-// Inicializar después de que el objeto esté definido
-document.addEventListener("DOMContentLoaded", () => ParticlesBG.init());
+// Con defer, el script corre cuando el DOM ya está listo — llamar directamente
+ParticlesBG.init();
