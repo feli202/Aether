@@ -77,7 +77,7 @@ const ParticlesBG = {
       const py = p.y + this.mouseY * p.z * 6;
       if (p.life <= 0 || py < -30) { this.particles[i] = this.newParticle(false); continue; }
       const flick   = Math.sin(p.flicker) * 0.18 + 0.82;
-      const opacity = p.life * flick * (0.28 + p.z * 0.62);
+      const opacity = p.life * flick * (0.5 + p.z * 0.5);
       this.draw(px, py, p.size, p.r, p.g, p.b, opacity);
     }
   },

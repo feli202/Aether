@@ -377,7 +377,6 @@ body {
   justify-content: center;
   gap: 10px;
   padding: 14px;
-  position: relative;
   background: radial-gradient(ellipse at 50% 42%,
     rgba(0,60,180,0.07) 0%,
     rgba(0,30,120,0.04) 40%,
@@ -1130,7 +1129,7 @@ button {
 }
 
 /* vistaJuego doesn't create stacking context - particles show through transparent #main */
-#vistaJuego   { position: relative; z-index: auto; background: transparent; }
+#vistaJuego   { z-index: auto; background: transparent; }
 /* vistaIntro needs to be above canvas */
 #vistaIntro   { z-index: 10; }
 .vistaOverlay { position: fixed; z-index: 100; }
