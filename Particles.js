@@ -3,9 +3,11 @@
 // Profundidad simulada con Z, parallax con mouse
 // ============================================================
 
-window.addEventListener("load", () => ParticlesBG.init());
-
-const ParticlesBG = {
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => ParticlesBG.init());
+} else {
+  ParticlesBG.init();
+}const ParticlesBG = {
   canvas: null, ctx: null,
   W: 0, H: 0, dpr: 1,
   particles: [],
@@ -122,3 +124,10 @@ const ParticlesBG = {
     ctx.fill();
   },
 };
+
+// Init after object is defined
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => ParticlesBG.init());
+} else {
+  ParticlesBG.init();
+}

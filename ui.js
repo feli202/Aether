@@ -313,7 +313,7 @@ var UI = {
 
   _hardReset() {
     if (confirm(T("reset_confirm"))) {
-      localStorage.removeItem(SAVE_KEY);
+      localStorage.clear(); // borra TODO, no solo SAVE_KEY
       location.reload();
     }
   },
