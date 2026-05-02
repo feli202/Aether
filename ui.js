@@ -230,6 +230,10 @@ var UI = {
           <button class="settBtn wide settBtnCol" onclick="UI._abrirFeedback('colaborar')">✦ &nbsp;${T("settings_colaborar")}</button>
         </div>
       </div>
+      <div class="settSection">
+        <div class="settLabel" style="color:rgba(248,113,113,0.5)">${T("reset_btn").toUpperCase()}</div>
+        <button class="settBtn wide" style="color:rgba(248,113,113,0.7);border-color:rgba(248,113,113,0.2)" onclick="UI._hardReset()">${T("reset_btn")}</button>
+      </div>
       <div class="settVersion">${T("settings_version")}: ${VERSION} &nbsp;·&nbsp; M = mute</div>`;
   },
 
@@ -305,6 +309,13 @@ var UI = {
         enviar.disabled = false;
       }
     };
+  },
+
+  _hardReset() {
+    if (confirm(T("reset_confirm"))) {
+      localStorage.removeItem(SAVE_KEY);
+      location.reload();
+    }
   },
 
   _setIdioma(lang) {

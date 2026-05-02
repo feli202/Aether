@@ -13,8 +13,12 @@
 
 * { box-sizing:border-box; margin:0; padding:0; }
 
-body {
+html {
   background: var(--bg);
+}
+
+body {
+  background: transparent;
   color: rgba(255,255,255,0.82);
   font-family: var(--font-body);
   height: 100vh;
@@ -1125,7 +1129,7 @@ button {
 }
 
 /* todo el juego por encima del canvas */
-#vistaJuego   { position: relative; z-index: 1; }
+#vistaJuego   { position: relative; z-index: auto; }
 .vistaOverlay { position: fixed;    z-index: 100; }
 * {
   -webkit-font-smoothing: antialiased;

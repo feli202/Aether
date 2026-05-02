@@ -314,7 +314,7 @@ function chequearDesbloqueos() {
   if (!S.flags.panelBDesbloqueado && S.gensA["g3a"].comprados >= 1) {
     S.flags.panelBDesbloqueado = true;
     UI.mostrarPanelB();
-    notif(T("notif_prisma_unlock"), T("notif_prisma_unlock_desc"), "#a78bfa");
+    notif(T("notif_prisma_unlock"), T("notif_prisma_unlock_desc"), "#a78bfa", 7000);
   }
   // Catalizador se revela al comprar el primer Prisma
   if (S.flags.panelBDesbloqueado && !S.flags.catalizadorRevelado && S.prismas >= 1) {
@@ -403,14 +403,15 @@ function actualizarLoreLine() {
   setTimeout(() => { el.textContent = getLoreEstado(estado); el.classList.remove("cambiando"); }, 600);
 }
 
-function notif(titulo, desc, color) {
+function notif(titulo, desc, color, duracion) {
   const n = document.createElement("div");
   n.className = "notif";
   n.style.borderColor = (color || "#00d4ff") + "66";
   n.innerHTML = "<strong style='color:" + (color||"#00d4ff") + "'>" + titulo + "</strong><small>" + desc + "</small>";
   document.body.appendChild(n);
   setTimeout(() => n.classList.add("visible"), 50);
-  setTimeout(() => { n.classList.remove("visible"); setTimeout(()=>n.remove(), 500); }, 3500);
+  const ms = duracion || 3500;
+  setTimeout(() => { n.classList.remove("visible"); setTimeout(()=>n.remove(), 500); }, ms);
 }
 
 // ── TICKS ────────────────────────────────────────────────────
@@ -419,7 +420,6 @@ function tick_A() {
   S._lastTickTime = Date.now();
   S.tickspeed = calcTickspeed();
   S.stats.tiempoJugado = (S.stats.tiempoJugado || 0) + 1;
-  UI.actualizar();
 }
 
 function tick_B() {
@@ -470,6 +470,7 @@ function tickCooldown() {
 }
 
 function uiLoop() {
+  UI.actualizar();
   actualizarLoreLine();
   actualizarPuntitos();
   UI.actualizarProgreso();
