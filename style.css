@@ -1129,9 +1129,11 @@ button {
   background: #06060f;
 }
 
-/* todo el juego por encima del canvas */
-#vistaJuego   { position: relative; z-index: auto; }
-.vistaOverlay { position: fixed;    z-index: 100; }
+/* vistaJuego doesn't create stacking context - particles show through transparent #main */
+#vistaJuego   { position: relative; z-index: auto; background: transparent; }
+/* vistaIntro needs to be above canvas */
+#vistaIntro   { z-index: 10; }
+.vistaOverlay { position: fixed; z-index: 100; }
 * {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

@@ -3,7 +3,8 @@
 // ============================================================
 
 const VERSION  = "v0.0.10D";
-const SAVE_KEY = "incremental_v0010";
+// En GitHub Pages varios repos comparten origen — prefijamos con el path
+const SAVE_KEY = (location.pathname.replace(/\/index\.html$/, "").replace(/\/$/, "") || "") + "_aether_v0010";
 
 // ── NUMBER FORMATTING ────────────────────────────────────────
 const SUFFIXES = ["","K","M","B","T","Qa","Qi","Sx","Sp","Oc","No"];

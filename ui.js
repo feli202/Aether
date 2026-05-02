@@ -313,10 +313,7 @@ var UI = {
 
   _hardReset() {
     if (confirm(T("reset_confirm"))) {
-      // Borrar todas las claves conocidas explícitamente
-      const keys = Object.keys(localStorage);
-      keys.forEach(k => localStorage.removeItem(k));
-      localStorage.clear();
+      localStorage.removeItem(SAVE_KEY);
       sessionStorage.clear();
       window.location.href = window.location.href.split("?")[0] + "?r=" + Date.now();
     }

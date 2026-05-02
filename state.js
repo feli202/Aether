@@ -53,8 +53,11 @@ function guardar() {
 }
 
 function cargar() {
-  // Si viene de un hard reset, no cargar save
-  if (window.location.search.includes("r=")) return;
+  // Si viene de un hard reset, no cargar save y limpiar URL
+  if (window.location.search.includes("r=")) {
+    history.replaceState(null, "", window.location.pathname);
+    return;
+  }
   const raw = localStorage.getItem(SAVE_KEY);
   if (!raw) return;
   try { S = deepMerge(crearEstado(), JSON.parse(raw)); }
