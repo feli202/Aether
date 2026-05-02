@@ -14,7 +14,7 @@
 * { box-sizing:border-box; margin:0; padding:0; }
 
 html {
-  background: var(--bg);
+  background: #06060f;
 }
 
 body {
@@ -1126,6 +1126,7 @@ button {
   pointer-events: none;
   width: 100% !important;
   height: 100% !important;
+  background: #06060f;
 }
 
 /* todo el juego por encima del canvas */
