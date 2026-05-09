@@ -20,7 +20,8 @@ function multClickArbol() {
     if (!S.arbol[n.id]) return;
     if (n.efecto.tipo === "mult_click") m *= n.efecto.val;
   });
-  if (S.arbol["resonancia"]) m *= 1 + Math.min(3, S.stats.recolecciones * 0.15);
+  // resonancia: cap reducido — +15% por rec, máx +75% (antes +300%)
+  if (S.arbol["resonancia"]) m *= 1 + Math.min(0.75, S.stats.recolecciones * 0.15);
   if (S.arbol["amplif"])     m *= 1 + Math.floor(nivelClickTotal() / 5) * 0.08;
   return m;
 }
@@ -46,15 +47,16 @@ function cooldownMs() {
   return Math.max(80, cd);
 }
 
-function esAuto()  { return S.arbol["auto"] || S.arbol["turboAuto"]; }
-function clicksPs(){ return S.arbol["turboAuto"] ? 20 : S.arbol["auto"] ? 10 : 0; }
+function esAuto()  { return !!(S.arbol["auto"] || S.arbol["nucleoEterno"]); }
+function clicksPs(){ return S.arbol["nucleoEterno"] ? 4 : S.arbol["auto"] ? 2 : 0; }
 
 function nivelClickTotal() { return S.click.nivelFrags + S.click.nivelOrbes; }
 
 function poderClick() {
-  const base = 1 + nivelClickTotal() * 2 + bonusClickFlat();
+  // ×0.8 por nivel — click crece suavemente, el árbol multiplica encima
+  // Siempre suma al menos 1 por nivel (con bonusClickFlat de poder1 esto es visible)
+  const base = 1 + nivelClickTotal() * 0.8 + bonusClickFlat();
   let mult = multClickArbol();
-  if (S.arbol["poderAuto"] && esAuto()) mult *= 2;
   return Math.floor(base * mult);
 }
 
@@ -65,10 +67,11 @@ function costoMejoraClick() {
   const n = nivelClickTotal();
   if (S.click.nivelFrags < MEJORAS_FRAGS)
     return { tipo:"fragmentos", cantidad: COSTO_FRAGS_POR_NIVEL[S.click.nivelFrags] };
-  if (n < 15) return { tipo:"orbes", cantidad:1  };
-  if (n < 30) return { tipo:"orbes", cantidad:3  };
-  if (n < 50) return { tipo:"orbes", cantidad:8  };
-  return          { tipo:"orbes", cantidad:20 };
+  // Orbes: escala x1.18 por nivel — gate auto llega a ~160 orbes totales (full late)
+  const nivelOrb = S.click.nivelOrbes;
+  const base     = CONFIG.click.costoBase || 1;
+  const escala   = CONFIG.click.costoEscala || 1.18;
+  return { tipo:"orbes", cantidad: Math.ceil(base * Math.pow(escala, nivelOrb)) };
 }
 
 // ── MULTIPLICADORES RESET LAYERS ────────────────────────────
@@ -79,16 +82,11 @@ function multPrisma() {
   return Math.pow(CONFIG.prisma.multProd, S.prismas);
 }
 
-// Catalizador: multiplicador acumulativo permanente a tickspeed
-function multCatalizador() {
+// Catalizador: multiplica producción de generadores directamente (×1.8 por cat)
+// El tickspeed ya no existe — la fractura amplifica los gens directamente
+function multCatalizadorProd() {
   if (S.catalizadores <= 0) return 1;
-  return Math.pow(CONFIG.catalizador.multTS, S.catalizadores);
-}
-
-// Tickspeed base sube con totalPrismas acumulado historico
-function tickspeedBase() {
-  const tp = S.stats.totalPrismas || 0;
-  return 1 + Math.pow(tp, 0.6) / 10;
+  return Math.pow(CONFIG.catalizador.multProd, S.catalizadores);
 }
 
 function prodFragmentos() {
@@ -98,12 +96,13 @@ function prodFragmentos() {
   const p1 = g1 * CONFIG.generadoresA[0].prod * bonusManual(S.gensA["g1a"].comprados);
   const p2 = g2 * CONFIG.generadoresA[1].prod * bonusManual(S.gensA["g2a"].comprados);
   const p3 = g3 * CONFIG.generadoresA[2].prod * bonusManual(S.gensA["g3a"].comprados);
-  return (p1 + p2 + p3) * multPrisma();
+  const multEterno = S.arbol["amplitudEterna"] ? 1.8 : 1;
+  return (p1 + p2 + p3) * multPrisma() * multEterno * multCatalizadorProd();
 }
 
-function calcTickspeed() {
-  return Math.max(1, tickspeedBase() * multCatalizador());
-}
+// calcTickspeed mantenido como alias para compatibilidad con UI existente
+// devuelve 1 siempre — el tickspeed ya no escala
+function calcTickspeed() { return 1; }
 
 function calcOrbes() {
   let base;
@@ -149,7 +148,10 @@ function costosCatalizador() {
 function accionClick() {
   if (esAuto()) return;
   if (S.clickCooldownRestante > 0) return;
+  // Bloquear click en 1000 si no tiene romper
+  if (!S.arbol["romper"] && S.fragmentos >= CONFIG.recolectar.umbral) return;
   S.fragmentos += poderClick();
+  if (!S.arbol["romper"]) S.fragmentos = Math.min(S.fragmentos, CONFIG.recolectar.umbral);
   S.clickCooldownRestante = cooldownMs();
   UI.activarOrb();
   UI.crearParticulas();
@@ -163,8 +165,11 @@ function accionMejorarClick() {
     S.fragmentos -= cantidad;
     S.click.nivelFrags++;
     if (window.AudioMgr?._ready) AudioMgr.onAceptado();
-    if (S.click.nivelFrags === MEJORAS_FRAGS)
-      notif(T("notif_click_max"), T("notif_click_max_desc"), "#f59e0b");
+    if (S.click.nivelFrags === MEJORAS_FRAGS) {
+      S.stats._clickMaxNotifs = (S.stats._clickMaxNotifs || 0) + 1;
+      if (S.stats._clickMaxNotifs <= 10)
+        notif(T("notif_click_max"), T("notif_click_max_desc"), "#34d399");
+    }
   } else {
     if (S.orbes < cantidad) return;
     S.orbes -= cantidad;
@@ -185,6 +190,8 @@ function accionRecolectar() {
   S.stats.orbesTotal += ganados;
   S.stats.recolecciones++;
   S.flags.primeraRecoleccion = true;
+  S.stats._hitos = S.stats._hitos || {};
+  S.stats._hitos.h1 = true;
   S.fragmentos = 0;
   S.produccionPendiente = 0;
   S.click.nivelFrags = 0;
@@ -201,11 +208,21 @@ function accionRecolectar() {
 function accionComprarPrisma() {
   const costo = costoPrisma();
   if (S.orbes < costo) { shake(document.getElementById("panelPrisma")); return; }
-  S.orbes   -= costo;
-  // Reset: fragmentos, GA (cantidad y costo), click temporal
+
+  // Preservar hitos permanentes antes de cualquier reset
+  if (!S.stats._hitos) S.stats._hitos = {};
+  S.stats._hitos.h1  = S.stats._hitos.h1  || S.flags.primeraRecoleccion;
+  S.stats._hitos.h2  = S.stats._hitos.h2  || S.gensDesbloqueados["g2a"];
+  S.stats._hitos.h3  = S.stats._hitos.h3  || (S.gensA["g2a"].comprados >= 1);
+  S.stats._hitos.h3b = S.stats._hitos.h3b || (S.gensA["g2a"].comprados >= 10);
+  S.stats._hitos.h4  = S.stats._hitos.h4  || S.flags.clickEliminado;
+
+  // Reset: fragmentos, GA, Orbes, click Y nodos etéreos del árbol
+  S.orbes   = 0;
   S.fragmentos = 0;
   S.produccionPendiente = 0;
   S.click.nivelFrags = 0;
+  S.click.nivelOrbes = 0;
   S.clickCooldownRestante = 0;
   CONFIG.generadoresA.forEach(c => {
     S.gensA[c.id].comprados = 0;
@@ -213,12 +230,19 @@ function accionComprarPrisma() {
     S.gensA[c.id].costo = c.costoBase;
   });
   S.gensDesbloqueados = { g1a:true, g2a:false, g3a:false };
+  // Resetear solo nodos etéreos (los eternos sobreviven)
+  CONFIG.arbol.forEach(n => {
+    if (n.tipo === "etereo") S.arbol[n.id] = false;
+  });
+  // Limpiar flags dependientes de nodos etéreos
+  S.flags.clickEliminado = false;
   // Incrementar
   S.prismas++;
   S.stats.totalPrismas++;
+  S.stats._hitos.h5 = true;
   // Notif
   if (window.AudioMgr?._ready) AudioMgr.onAceptado();
-  notif(T("notif_prisma"), T("notif_prisma_desc") + " x" + fmt(multPrisma().toFixed(2)), "#a78bfa");
+  notif(T("notif_prisma"), T("notif_prisma_reset_desc") + " ×" + fmt(multPrisma().toFixed(2)), "#a78bfa");
   chequearDesbloqueos();
   UI.crearPanelGenA();
   UI.actualizarProgreso();
@@ -227,6 +251,16 @@ function accionComprarPrisma() {
 function accionComprarCatalizador() {
   const req = costosCatalizador();
   if (S.prismas < req) { shake(document.getElementById("panelCatalizador")); return; }
+
+  // Preservar hitos permanentes antes del reset
+  if (!S.stats._hitos) S.stats._hitos = {};
+  S.stats._hitos.h1  = S.stats._hitos.h1  || S.flags.primeraRecoleccion;
+  S.stats._hitos.h2  = S.stats._hitos.h2  || S.gensDesbloqueados["g2a"];
+  S.stats._hitos.h3  = S.stats._hitos.h3  || (S.gensA["g2a"].comprados >= 1);
+  S.stats._hitos.h3b = S.stats._hitos.h3b || (S.gensA["g2a"].comprados >= 10);
+  S.stats._hitos.h4  = S.stats._hitos.h4  || S.flags.clickEliminado;
+  S.stats._hitos.h5  = S.stats._hitos.h5  || (S.stats.totalPrismas >= 1);
+
   // Reset todo hasta Prismas
   S.fragmentos = 0;
   S.produccionPendiente = 0;
@@ -239,11 +273,19 @@ function accionComprarCatalizador() {
   });
   S.gensDesbloqueados = { g1a:true, g2a:false, g3a:false };
   S.prismas = 0;
+  // Los flags de UI permanentes NO se resetean — el panel B y el Catalizador siguen visibles
+  // S.flags.panelBDesbloqueado y S.flags.catalizadorRevelado sobreviven
+  // Resetear nodos etéreos del árbol
+  CONFIG.arbol.forEach(n => {
+    if (n.tipo === "etereo") S.arbol[n.id] = false;
+  });
+  S.flags.clickEliminado = false;
   // Incrementar
   S.catalizadores++;
+  if (!S.stats._hitos) S.stats._hitos = {}; S.stats._hitos.h6 = true;
   const tsActual = calcTickspeed();
   if (window.AudioMgr?._ready) AudioMgr.onAceptado();
-  notif(T("notif_catalizador"), "x" + fmt(multCatalizador().toFixed(2)) + " Tickspeed", "#00d4ff");
+  notif(T("notif_catalizador"), T("notif_catalizador_reset_desc") + " ×" + fmt(multCatalizadorProd().toFixed(2)), "#00d4ff");
   // Comprobar prestige
   chequearPrestige();
   UI.crearPanelGenA();
@@ -274,7 +316,31 @@ function accionComprarGenA(cfg) {
   S.orbes -= g.costo;
   g.comprados++;
   g.costo = Math.ceil(g.costo * cfg.costoMult);
+  if (!S.stats._hitos) S.stats._hitos = {};
+  if (cfg.id === "g2a" && g.comprados >= 1) S.stats._hitos.h3 = true;
+  if (cfg.id === "g2a" && g.comprados >= 10) S.stats._hitos.h3b = true;
   if (window.AudioMgr?._ready) AudioMgr.onAceptado();
+  chequearDesbloqueos();
+  chequearLogros();
+}
+
+function accionComprarGenAMax(cfg) {
+  if (!S.gensDesbloqueados[cfg.id]) return;
+  let comprados = 0;
+  const g = S.gensA[cfg.id];
+  // Comprar mientras haya orbes — recalcular costo en cada iteración
+  while (S.orbes >= g.costo) {
+    S.orbes -= g.costo;
+    g.comprados++;
+    g.costo = Math.ceil(g.costo * cfg.costoMult);
+    comprados++;
+  }
+  if (comprados === 0) { shake(document.getElementById("genBox_" + cfg.id)); return; }
+  if (!S.stats._hitos) S.stats._hitos = {};
+  if (cfg.id === "g2a" && g.comprados >= 1)  S.stats._hitos.h3  = true;
+  if (cfg.id === "g2a" && g.comprados >= 10) S.stats._hitos.h3b = true;
+  if (window.AudioMgr?._ready) AudioMgr.onAceptado();
+  notif("+" + comprados + " " + TL(cfg), fmt(S.orbes) + " " + T("orbes"), "#a78bfa", 2000);
   chequearDesbloqueos();
   chequearLogros();
 }
@@ -292,6 +358,7 @@ function accionComprarArbol(nodoId) {
   S.arbol[nodoId] = true;
   if (window.AudioMgr?._ready) AudioMgr.onAceptado();
   chequearDesbloqueos();
+  chequearPrestige();
   if (nodo.efecto.tipo === "romper") {
     notif(T("umbral_roto"), T("umbral_roto_desc"), "#f59e0b");
   }
@@ -302,12 +369,16 @@ function accionComprarArbol(nodoId) {
 // ── DESBLOQUEOS ──────────────────────────────────────────────
 
 function chequearDesbloqueos() {
-  if (!S.gensDesbloqueados["g2a"] && S.gensA["g1a"].comprados >= 6) {
+  if (!S.gensDesbloqueados["g2a"] && (S.gensA["g1a"].comprados >= 6 || S.stats._hitos?.h2)) {
     S.gensDesbloqueados["g2a"] = true;
+    if (!S.stats._hitos) S.stats._hitos = {};
+    S.stats._hitos.h2 = true;
     notif(T("notif_g2a_unlock"), T("notif_g2a_unlock_desc"), "#00d4ff");
   }
   if (!S.gensDesbloqueados["g3a"] && S.gensA["g2a"].comprados >= 10) {
     S.gensDesbloqueados["g3a"] = true;
+    if (!S.stats._hitos) S.stats._hitos = {};
+    S.stats._hitos.h3b = true;
     notif(T("notif_g3a_unlock"), T("notif_g3a_unlock_desc"), "#00d4ff");
   }
   // Panel B se desbloquea con 3 G3A — revela Prisma
@@ -320,17 +391,22 @@ function chequearDesbloqueos() {
   if (S.flags.panelBDesbloqueado && !S.flags.catalizadorRevelado && S.prismas >= 1) {
     S.flags.catalizadorRevelado = true;
     UI._revelarCatalizador();
-    notif(T("notif_catalizador_unlock"), T("notif_catalizador_unlock_desc"), "#00d4ff");
+    notif(T("notif_catalizador_unlock"), T("notif_catalizador_unlock_desc"), "#00d4ff", 7000);
   }
   if (!S.flags.clickEliminado && S.arbol["auto"]) {
     S.flags.clickEliminado = true;
+    if (!S.stats._hitos) S.stats._hitos = {}; S.stats._hitos.h4 = true;
     setTimeout(() => UI.animarTransicionIdle(), 400);
     notif(T("notif_nucleo"), T("notif_nucleo_desc"), "#34d399");
   }
 }
 
 function chequearPrestige() {
-  if (S.catalizadores >= CONFIG.catalizador.catalizadoresParaPrestige) {
+  // Condición D: todos los nodos eternos comprados + catalizadoresParaPrestige
+  const eternos = CONFIG.arbol.filter(n => n.tipo === "eterno").map(n => n.id);
+  const eternosOk = eternos.every(id => S.arbol[id]);
+  const catOk = S.catalizadores >= CONFIG.catalizador.catalizadoresParaPrestige;
+  if (eternosOk && catOk && !S.flags.prestigeDisponible) {
     S.flags.prestigeDisponible = true;
     UI.mostrarPrestige();
   }
@@ -403,22 +479,67 @@ function actualizarLoreLine() {
   setTimeout(() => { el.textContent = getLoreEstado(estado); el.classList.remove("cambiando"); }, 600);
 }
 
-function notif(titulo, desc, color, duracion) {
+// ── SISTEMA DE NOTIFICACIONES EN COLA ───────────────────────
+// Las notificaciones se apilan verticalmente sin solaparse
+var _notifQueue   = [];
+var _notifActivas = [];
+const NOTIF_GAP    = 10;  // px entre notificaciones
+const NOTIF_BASE_Y = 48;  // px desde el bottom para la primera
+
+function _notifReposicionar() {
+  let offsetY = NOTIF_BASE_Y;
+  // Recorrer en orden inverso (la más nueva abajo)
+  for (let i = _notifActivas.length - 1; i >= 0; i--) {
+    const n = _notifActivas[i];
+    n.style.bottom = offsetY + "px";
+    offsetY += n.offsetHeight + NOTIF_GAP;
+  }
+}
+
+function _notifMostrarSiguiente() {
+  if (_notifQueue.length === 0) return;
+  const { titulo, desc, color, duracion } = _notifQueue.shift();
+
   const n = document.createElement("div");
   n.className = "notif";
   n.style.borderColor = (color || "#00d4ff") + "66";
   n.innerHTML = "<strong style='color:" + (color||"#00d4ff") + "'>" + titulo + "</strong><small>" + desc + "</small>";
+  n.style.bottom = NOTIF_BASE_Y + "px";
   document.body.appendChild(n);
-  setTimeout(() => n.classList.add("visible"), 50);
+  _notifActivas.push(n);
+
+  // Pequeño delay para que el DOM registre la posición inicial antes de animar
+  requestAnimationFrame(() => {
+    _notifReposicionar();
+    setTimeout(() => n.classList.add("visible"), 20);
+  });
+
   const ms = duracion || 3500;
-  setTimeout(() => { n.classList.remove("visible"); setTimeout(()=>n.remove(), 500); }, ms);
+  setTimeout(() => {
+    n.classList.remove("visible");
+    setTimeout(() => {
+      n.remove();
+      const idx = _notifActivas.indexOf(n);
+      if (idx !== -1) _notifActivas.splice(idx, 1);
+      _notifReposicionar();
+      // Mostrar la siguiente de la cola con pequeño delay
+      setTimeout(_notifMostrarSiguiente, 80);
+    }, 400);
+  }, ms);
+}
+
+function notif(titulo, desc, color, duracion) {
+  _notifQueue.push({ titulo, desc, color, duracion });
+  // Si no hay activas ni en proceso, disparar inmediatamente
+  if (_notifActivas.length < 3) {
+    _notifMostrarSiguiente();
+  }
 }
 
 // ── TICKS ────────────────────────────────────────────────────
 
 function tick_A() {
   S._lastTickTime = Date.now();
-  S.tickspeed = calcTickspeed();
   S.stats.tiempoJugado = (S.stats.tiempoJugado || 0) + 1;
 }
 
@@ -431,12 +552,12 @@ function tick_B() {
 
 function tickCooldown() {
   // Producción de fragmentos — 20 veces por segundo (cada 50ms)
-  const prod50 = prodFragmentos() * calcTickspeed() / 20;
+  const prod50 = prodFragmentos() / 20;
   if (prod50 > 0) {
     S.stats.fragsTotal += prod50;
     if (!S.arbol["romper"]) {
       const espacio = Math.max(0, CONFIG.recolectar.umbral - S.fragmentos);
-      S.fragmentos += Math.min(prod50, espacio);
+      S.fragmentos = Math.min(CONFIG.recolectar.umbral, S.fragmentos + Math.min(prod50, espacio));
     } else {
       S.fragmentos += prod50;
     }

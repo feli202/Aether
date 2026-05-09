@@ -66,7 +66,7 @@ var AudioMgr = {
 
     const gain = this.ctx.createGain();
     // Intro: más alto. Juego: normal
-    const MVOL = 0.287; // 50% más alto que antes (0.191 * 1.5)
+    const MVOL = 0.4; 
     gain.gain.value = introMode ? this.vols.musica * 1.4 * MVOL : this.vols.musica * MVOL;
 
     src.connect(gain);

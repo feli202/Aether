@@ -55,6 +55,9 @@ var UI = {
   },
 
   bindEventos() {
+    // Prevenir menú contextual del browser en toda la UI — click derecho es compra máxima
+    document.getElementById("vistaJuego")?.addEventListener("contextmenu", e => e.preventDefault());
+
     document.getElementById("clickBtn")?.addEventListener("click", () => {
       accionClick();
     });
@@ -393,7 +396,7 @@ var UI = {
       <div class="statRow"><span>${T("stats_prismas")}</span><span>${S.stats.totalPrismas}</span></div>
       <div class="statRow"><span>${T("stats_catalizadores")}</span><span>${S.catalizadores}</span></div>
       <div class="statRow"><span>${T("stats_nodos")}</span><span>${Object.values(S.arbol).filter(Boolean).length}</span></div>
-      <div class="statRow"><span>${T("stats_ts")}</span><span>x${fmt(calcTickspeed())}</span></div>
+      <div class="statRow"><span>${T("stats_ts")}</span><span>${S.catalizadores}</span></div>
       <div class="statVersion">${VERSION}</div>`;
   },
 
@@ -479,9 +482,22 @@ var UI = {
           "<span id='genTotal_" + cfg.id + "'>Total: 0</span>" +
           "<span id='genComp_"  + cfg.id + "'>Manual: 0</span>" +
         "</div>" +
+        "<div class='genProgressWrap'>" +
+          "<div class='genProgressBar' id='genBar_" + cfg.id + "'></div>" +
+          "<span class='genProgressLabel' id='genBarLabel_" + cfg.id + "'></span>" +
+        "</div>" +
         "<p class='genInfo' id='genInfo_" + cfg.id + "'>---</p>" +
         "<button>" + T("gen_comprar") + "</button>";
-      box.querySelector("button").addEventListener("click", () => accionComprarGenA(cfg));
+      const btn = box.querySelector("button");
+      btn.addEventListener("click",        () => accionComprarGenA(cfg));
+      btn.addEventListener("contextmenu",  e  => { e.preventDefault(); accionComprarGenAMax(cfg); });
+      // Long press en mobile = compra máxima
+      let _longPress = null;
+      btn.addEventListener("touchstart", e => {
+        _longPress = setTimeout(() => { e.preventDefault(); accionComprarGenAMax(cfg); _longPress = null; }, 500);
+      }, { passive: true });
+      btn.addEventListener("touchend",   () => { if (_longPress) { clearTimeout(_longPress); _longPress = null; } });
+      btn.addEventListener("touchmove",  () => { if (_longPress) { clearTimeout(_longPress); _longPress = null; } });
       cont.appendChild(box);
     });
   },
@@ -536,7 +552,7 @@ var UI = {
         "<div class='resetPanelHeader'>" +
           "<span class='resetGlyph' style='color:#00d4ff'>◈</span>" +
           "<span class='resetTitle' id='txtCatNombre'>" + T("catalizador_nombre") + "</span>" +
-          "<span class='resetMult' id='catMult'>x" + fmt(multCatalizador().toFixed(2)) + " " + T("catalizador_mult") + "</span>" +
+          "<span class='resetMult' id='catMult'>x" + fmt(multCatalizadorProd().toFixed(2)) + " " + T("catalizador_mult") + "</span>" +
         "</div>" +
         "<p class='resetDesc'>" + T("catalizador_info") + "</p>" +
         "<div class='resetStats'>" +
@@ -573,7 +589,7 @@ var UI = {
 
     if (S.flags.catalizadorRevelado) {
       const cm = document.getElementById("catMult");
-      if (cm) cm.innerText = "x" + multCatalizador().toFixed(2) + " " + T("catalizador_mult");
+      if (cm) cm.innerText = "x" + multCatalizadorProd().toFixed(2) + " " + T("catalizador_mult");
       const ca = document.getElementById("catActivos");
       if (ca) ca.innerText = S.catalizadores;
       const cr = document.getElementById("catReq");
@@ -598,20 +614,20 @@ var UI = {
         id:"h2", label:() => T("h_6_cond"), sec:"clicks",
         hint: () => { const n=S.gensA["g1a"].comprados; return n>=6?null:(6-n)+" "+T("h_cond_falta"); },
         req: () => { const n=S.gensA["g1a"].comprados; return "<strong style='color:#00d4ff'>"+n+" / 6</strong><br><span style='opacity:0.5'>"+Math.max(0,6-n)+" "+T("h_cond_falta")+"</span>"; },
-        cond: () => S.gensA["g1a"].comprados >= 6,
+        cond: () => (S.stats._hitos?.h2 || S.gensA["g1a"].comprados >= 6),
         val:  () => S.gensA["g1a"].comprados + " / 6",
       },
       {
         id:"h3", label:() => T("h_resonador"), sec:"clicks",
         hint: () => T("h_hint_primera"),
         req: () => "<strong style='color:#a78bfa'>"+fmt(S.gensA["g2a"].costo)+" "+T("orbes")+"</strong><br><span style='opacity:0.5'>"+T("orbes")+": "+fmt(S.orbes)+"</span>",
-        cond: () => S.gensA["g2a"].comprados >= 1,
+        cond: () => (S.stats._hitos?.h3 || S.gensA["g2a"].comprados >= 1),
       },
       {
         id:"h3b", label:() => T("h_10_res"), sec:"clicks",
         hint: () => { const n=S.gensA["g2a"].comprados; return n>=10?null:(10-n)+" "+T("h_cond_falta2"); },
         req: () => { const n=S.gensA["g2a"].comprados; return "<strong style='color:#00d4ff'>"+n+" / 10</strong><br><span style='opacity:0.5'>"+(10-n)+" "+T("h_cond_falta2")+"</span>"; },
-        cond: () => S.gensA["g2a"].comprados >= 10,
+        cond: () => (S.stats._hitos?.h3b || S.gensA["g2a"].comprados >= 10),
         val:  () => S.gensA["g2a"].comprados + " / 10",
       },
       {
@@ -623,32 +639,40 @@ var UI = {
           const col = ok ? "#34d399" : "#f87171";
           return T("stats_click_nivel") + ": <strong style='color:#a78bfa'>" + niv + " / 15</strong><br>Vel IV: <strong style='color:" + col + "'>" + (ok ? "✓" : "✗") + "</strong>";
         },
-        cond: () => S.flags.clickEliminado,
+        cond: () => (S.stats._hitos?.h4 || S.flags.clickEliminado),
       },
       {
         id:"h5", label:() => T("h_prisma"), sec:"energia",
         hint: () => T("h_hint_prisma"),
         req: () => { const n=S.gensA["g3a"].comprados; return "<strong style='color:#00d4ff'>"+n+" / 3</strong>"; },
-        cond: () => S.prismas >= 1,
+        cond: () => (S.stats._hitos?.h5 || S.prismas >= 1 || S.stats.totalPrismas >= 1),
       },
       {
         id:"h6", label:() => T("h_catalizador"), sec:"energia",
         hint: () => T("h_hint_catalizador"),
+        cond: () => (S.stats._hitos?.h6 || S.catalizadores >= 1),
+      },
+      {
+        id:"h7", label:() => T("h_eternos"), sec:"ts",
+        hint: () => T("h_hint_eternos"),
+        cond: () => {
+          const eternos = CONFIG.arbol.filter(n => n.tipo === "eterno");
+          return eternos.some(n => S.arbol[n.id]);
+        },
+        val: () => {
+          const eternos = CONFIG.arbol.filter(n => n.tipo === "eterno");
+          const comp = eternos.filter(n => S.arbol[n.id]).length;
+          return comp + " / " + eternos.length;
+        },
+      },
+      {
+        id:"h8", label:() => T("h_fracturas"), sec:"ts",
+        hint: () => T("h_hint_fracturas"),
         cond: () => S.catalizadores >= 1,
+        val:  () => S.catalizadores + " / " + CONFIG.catalizador.catalizadoresParaPrestige,
       },
       {
-        id:"h7", label:() => T("h_ts1"), sec:"ts",
-        hint: () => T("h_hint_ts"),
-        cond: () => S.tickspeed >= 1000,
-        val:  () => "x" + fmt(S.tickspeed) + " / x1.000",
-      },
-      {
-        id:"h8", label:() => T("h_ts2"), sec:"ts",
-        cond: () => S.tickspeed >= 100000,
-        val:  () => "x" + fmt(S.tickspeed) + " / x100.000",
-      },
-      {
-        id:"h9", label:() => T("h_singularidad"), sec:"ts",
+        id:"h9", label:() => T("prestige_btn"), sec:"ts",
         hint: () => T("h_hint_singularidad"),
         cond: () => S.flags.prestigeDisponible,
       },
@@ -691,25 +715,40 @@ var UI = {
         "</div>";
 
       // Tooltip en el item entero (más fácil de hover), solo si tiene req
-      if (h.req) {
-        item.style.cursor = "help";
-        item.addEventListener("mouseenter", () => {
-          // Mostrar tooltip si este hito es el activo (current) o tiene info útil
-          const node = document.getElementById("prognode_" + h.id);
-          const isCurrent = node && (node.classList.contains("current") || (!node.classList.contains("done")));
-          if (!isCurrent) return;
-          const txt = typeof h.req === "function" ? h.req() : h.req;
-          if (!txt) return;
-          tip.innerHTML = "<strong style='color:#00d4ff;font-size:9px;letter-spacing:1px;display:block;margin-bottom:5px'>" + T("h_req_requisitos") + "</strong>" + txt;
-          tip.style.display = "block";
-          const panel = document.getElementById("leftPanel");
-          const pr    = panel ? panel.getBoundingClientRect() : { right: 220 };
-          const ir    = item.getBoundingClientRect();
-          tip.style.left = (pr.right + 12) + "px";
-          tip.style.top  = Math.max(8, ir.top + ir.height / 2 - 30) + "px";
-        });
-        item.addEventListener("mouseleave", () => { tip.style.display = "none"; });
-      }
+      // Tooltip progresivo para TODOS los hitos no completados
+      item.style.cursor = "help";
+      item.addEventListener("mouseenter", () => {
+        const node = document.getElementById("prognode_" + h.id);
+        if (!node || node.classList.contains("done")) return;
+        // Calcular distancia desde el último hito completado
+        const hitoIdx = this._hitos.indexOf(h);
+        let lastDone = -1;
+        for (let j = 0; j < hitoIdx; j++) {
+          const hn = document.getElementById("prognode_" + this._hitos[j].id);
+          if (hn && hn.classList.contains("done")) lastDone = j;
+        }
+        const dist = hitoIdx - lastDone - 1; // 0 = siguiente inmediato
+        let txt = "";
+        if (h.req && dist === 0) {
+          // Siguiente inmediato: info completa
+          txt = "<strong style='color:#00d4ff;font-size:9px;letter-spacing:1px;display:block;margin-bottom:5px'>" + T("h_req_requisitos") + "</strong>" + (typeof h.req === "function" ? h.req() : h.req);
+        } else if (h.hint) {
+          // Lejano: solo hint vago
+          const hint = typeof h.hint === "function" ? h.hint() : h.hint;
+          if (hint) txt = "<span style='opacity:" + Math.max(0.3, 0.8 - dist*0.15) + ";font-style:italic'>" + hint + "</span>";
+        } else {
+          txt = "<span style='opacity:0.3;font-style:italic'>???</span>";
+        }
+        if (!txt) return;
+        tip.innerHTML = txt;
+        tip.style.display = "block";
+        const panel = document.getElementById("leftPanel");
+        const pr = panel ? panel.getBoundingClientRect() : { right: 220 };
+        const ir = item.getBoundingClientRect();
+        tip.style.left = (pr.right + 12) + "px";
+        tip.style.top  = Math.max(8, ir.top + ir.height/2 - 30) + "px";
+      });
+      item.addEventListener("mouseleave", () => { tip.style.display = "none"; });
 
       cont.appendChild(item);
     });
@@ -994,16 +1033,49 @@ var UI = {
     let t = document.getElementById("nodoTooltip");
     if (!t) { t = document.createElement("div"); t.id = "nodoTooltip"; document.body.appendChild(t); }
     const comprado = S.arbol[id];
-    const desc     = cfg.descKey ? T(cfg.descKey) : (cfg.desc || "");
+    const reqOk    = !cfg.req || S.arbol[cfg.req];
+
+    // Calcular profundidad de niebla (igual que en arbol.js)
+    let fogDepth = 0;
+    if (!comprado && !reqOk) {
+      let curr = cfg.req;
+      while (curr && !S.arbol[curr] && fogDepth < 6) {
+        const parent = CONFIG.arbol.find(x => x.id === curr);
+        curr = parent?.req;
+        fogDepth++;
+      }
+    }
+    // Opacidad del tooltip: 1.0 si disponible, decrece con niebla
+    const alfa = comprado ? 1.0 : reqOk ? 0.95 : Math.max(0.15, 0.85 - fogDepth * 0.18);
+
+    const desc = cfg.descKey ? T(cfg.descKey) : (cfg.desc || "");
+    // Con mucha niebla: ocultar desc y costo
+    const mostrarDesc  = alfa > 0.4;
+    const mostrarCosto = alfa > 0.3;
+    const nombreOsc    = fogDepth > 3 ? "???" : fogDepth > 1 ? TL(cfg).replace(/[aeiouAEIOU]/g,"·") : TL(cfg);
+
+    t.style.opacity = alfa;
+    const esEterno = cfg.tipo === "eterno";
+    const tipoColor = esEterno ? "#a78bfa" : "#00d4ff";
+    const tipoLabel = esEterno
+      ? (T("nodo_eterno") || "ETERNO")
+      : (T("nodo_etereo") || "ETÉREO");
+    const resetLabel = esEterno
+      ? (T("nodo_reset_eterno") || "se resetea con Prestige")
+      : (T("nodo_reset_etereo") || "se resetea con Prisma");
+
     t.innerHTML =
-      "<strong>" + TL(cfg) + "</strong>" +
-      (desc ? "<span>" + desc + "</span>" : "") +
+      "<strong style='color:" + tipoColor + "'>" + nombreOsc + "</strong>" +
+      "<span style='font-size:10px;color:" + tipoColor + ";opacity:0.7;text-transform:uppercase;letter-spacing:1px'>" + tipoLabel + " · " + resetLabel + "</span>" +
+      (mostrarDesc && desc ? "<span>" + desc + "</span>" : fogDepth > 0 ? "<span style='opacity:0.4;font-style:italic'>···</span>" : "") +
       (comprado
         ? "<span style='color:#34d399'>✓ " + T("nodo_comprado") + "</span>"
-        : "<span style='color:#a78bfa'>" + fmt(cfg.costo) + " " + T("orbes") + "</span>");
+        : mostrarCosto
+          ? "<span style='color:" + tipoColor + "'>" + fmt(cfg.costo) + " " + T("orbes") + "</span>"
+          : "<span style='opacity:0.3'>???</span>");
     t.style.display = "block";
     const canvas = document.getElementById("vistaArbol");
-    const cr = canvas ? canvas.getBoundingClientRect() : { left: 0, top: 0, right: window.innerWidth };
+    const cr = canvas ? canvas.getBoundingClientRect() : { left:0, top:0, right:window.innerWidth };
     t.style.left = Math.min(pos.x + cr.left + 16, cr.right - 210) + "px";
     t.style.top  = Math.max(cr.top + 10, pos.y + cr.top - 60) + "px";
   },
@@ -1024,7 +1096,7 @@ var UI = {
         el.style.borderColor = "#a78bfa55";
         el.style.background = "#a78bfa11";
         el.style.transform = "translateX(0)";
-        el.innerHTML = "×" + multPrisma().toFixed(2) + " GA &nbsp;|&nbsp; ×" + multCatalizador().toFixed(1) + " TS";
+        el.innerHTML = "×" + multPrisma().toFixed(2) + " GA &nbsp;|&nbsp; ×" + multCatalizadorProd().toFixed(1) + " TS";
       } else {
         el.style.display = "none";
       }
@@ -1141,7 +1213,7 @@ var UI = {
           mejBtn.innerHTML =
             T("click_maximizado") + "<br>" +
             "<span style='font-size:0.75em;opacity:0.7'>" + T("niv_label") + " " + nivelClickTotal() + " — " + poderClick() + " " + T("frags_click") + "</span><br>" +
-            "<span style='font-size:0.75em;color:#00d4ff'>" + c + " " + T("frags_temp") + " <span style='opacity:0.5'>" + T("temp_label") + "</span></span>" +
+            "<span style='font-size:0.75em;color:#00d4ff'>" + c + " " + T("frags_temp") + " <span style='opacity:0.5'>" + T("eterea_label") + "</span></span>" +
             "<div style='margin-top:4px;background:rgba(0,212,255,0.15);border-radius:3px;height:3px'><div id='mejBarFill' style='background:#00d4ff;height:3px;border-radius:3px;width:0%'></div></div>";
         } else {
           const esFrags    = tipo === "fragmentos";
@@ -1212,6 +1284,23 @@ var UI = {
         const prodReal = Math.floor(prod * mp);
         const mpStr    = mp > 1.01 ? " <span style='color:#a78bfa;font-size:0.85em'>×" + mp.toFixed(2) + " Prisma</span>" : "";
         infoEl.innerHTML = "<span class='genProd'>+" + fmt(prodReal) + "/tick</span>" + mpStr + "<br><span style='opacity:0.5'>Costo: " + fmt(gs.costo) + " <span style='color:#a78bfa'>Orbes</span></span>";
+      }
+      // Barra de progreso hacia el siguiente bonus (cada 12 comprados = x2 bonus)
+      const barEl   = document.getElementById("genBar_"      + cfg.id);
+      const labelEl = document.getElementById("genBarLabel_" + cfg.id);
+      if (barEl && desbloq) {
+        const nextBonus = 12 - (gs.comprados % 12);
+        const pct       = ((gs.comprados % 12) / 12) * 100;
+        barEl.style.width = pct + "%";
+        barEl.style.background = pct > 85
+          ? "linear-gradient(90deg,rgba(0,212,255,0.6),rgba(0,212,255,0.9))"
+          : "linear-gradient(90deg,rgba(0,212,255,0.25),rgba(0,212,255,0.5))";
+        if (labelEl) {
+          const mult = Math.pow(2, Math.floor(gs.comprados / 12) + 1);
+          labelEl.innerText = nextBonus === 12
+            ? "×" + mult + " activo"
+            : nextBonus + " → ×" + mult;
+        }
       }
       if (box) box.classList.toggle("produciendo", total > 0);
     });
@@ -1326,5 +1415,5 @@ var UI = {
     if (is) is.style.display = "flex";
   },
 
-  notifLogro(l) { notif("Logro: " + l.label, l.desc, "#f59e0b"); },
+  notifLogro(l) { notif("✦ " + (T("logro_" + l.id) || l.label), T("logro_" + l.id + "_d") || l.desc || "", "#f59e0b"); },
 };

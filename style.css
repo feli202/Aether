@@ -13,6 +13,13 @@
 
 * { box-sizing:border-box; margin:0; padding:0; }
 
+/* Sin selección de texto en toda la UI */
+body, button, #vistaJuego, #vistaIntro {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 html {
   background: #06060f;
 }
@@ -673,6 +680,7 @@ button {
   font-family: var(--font-display);
   transition: 0.15s;
   -webkit-font-smoothing: antialiased;
+  touch-action: manipulation;
 }
 
 #clickBtn {
@@ -901,10 +909,14 @@ button {
   z-index: 100;
   display: flex;
   flex-direction: column;
+  background: var(--bg);
+}
+#vistaArbol {
   background:
-    radial-gradient(ellipse at 20% 50%, rgba(0,212,255,0.03) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(167,139,250,0.03) 0%, transparent 50%),
-    var(--bg);
+    radial-gradient(ellipse at 15% 40%, rgba(80,0,200,0.06) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 20%, rgba(0,80,200,0.05) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 90%, rgba(0,150,255,0.04) 0%, transparent 45%),
+    #020208;
 }
 
 #arbolHeader, #logrosHeader {
@@ -997,7 +1009,11 @@ button {
   flex: 1;
   width: 100%;
   display: block;
-  background: transparent;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(100,0,255,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 30%, rgba(0,100,255,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 80%, rgba(0,200,255,0.03) 0%, transparent 50%),
+    #03030d;
 }
 
 /* ── TOOLTIP NODO ────────────────────────────────────────── */
@@ -1083,8 +1099,8 @@ button {
 /* ── NOTIFICACIONES ──────────────────────────────────────── */
 .notif {
   position: fixed;
-  bottom: 48px;
-  left: 50%;
+  /* Centrado sobre #main: columna izq=220px, columna der=300px */
+  left: calc(220px + (100vw - 220px - 300px) / 2);
   transform: translateX(-50%) translateY(12px);
   background: rgba(3,4,14,0.97);
   border: 0.5px solid rgba(0,212,255,0.22);
@@ -1094,7 +1110,7 @@ button {
   color: white;
   text-align: center;
   opacity: 0;
-  transition: opacity 0.3s, transform 0.3s;
+  transition: opacity 0.3s, transform 0.3s, bottom 0.25s ease;
   pointer-events: none;
   z-index: 500;
   max-width: 320px;
@@ -1332,7 +1348,7 @@ button {
 
 @media (max-width: 780px) {
 
-  /* Reset layout a columna única */
+  /* Layout en columna única con tabs */
   #vistaJuego {
     display: flex;
     flex-direction: column;
@@ -1343,84 +1359,138 @@ button {
     overflow: hidden;
   }
 
+  /* Barra inferior arriba en mobile = tabs de navegación */
   #mobileTabs {
     display: flex;
     flex-shrink: 0;
     border-bottom: 0.5px solid rgba(0,212,255,0.15);
     background: rgba(5,5,14,0.98);
     z-index: 10;
+    order: -1;
   }
 
   .mobileTab {
     flex: 1;
-    padding: 9px 4px;
+    padding: 10px 4px;
     background: transparent;
     border: none;
     border-right: 0.5px solid rgba(0,212,255,0.08);
     color: rgba(255,255,255,0.25);
     font-family: var(--font-display);
     font-size: 8px;
-    letter-spacing: 2px;
+    letter-spacing: 1.5px;
     cursor: pointer;
     transition: 0.2s;
+    -webkit-tap-highlight-color: transparent;
   }
-
   .mobileTab:last-child { border-right: none; }
-
   .mobileTab.active {
     color: var(--cyan);
     background: rgba(0,212,255,0.05);
     border-bottom: 1px solid var(--cyan);
   }
 
-  /* Paneles: solo el activo visible */
+  /* Paneles — solo el activo visible */
   #leftPanel, #main, #rightPanel {
     display: none;
     flex: 1;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     border: none;
     width: 100%;
     max-width: 100%;
-    height: 100%;
   }
-
   #leftPanel.tabActive,
   #main.tabActive,
-  #rightPanel.tabActive {
-    display: flex;
-  }
+  #rightPanel.tabActive { display: flex; }
 
-  /* Centro en mobile más compacto */
+  /* Barra inferior de overlays — abajo */
+  #barraInferior {
+    flex-shrink: 0;
+    order: 2;
+  }
+  .barraBtn { font-size: 8px; padding: 0 4px; letter-spacing: 1px; }
+
+  /* ── PANEL CENTRAL (main) ── */
   #main {
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    padding: 12px 14px;
+    padding: 10px 14px 16px;
     gap: 8px;
   }
 
-  #cosmicContainer {
-    width: 140px;
-    height: 140px;
-  }
+  #cosmicContainer { width: 130px; height: 130px; }
+  #orb { width: 110px !important; height: 110px !important; }
 
-  #orb {
-    width: 120px !important;
-    height: 120px !important;
-  }
+  #clickBtn { padding: 14px 36px; font-size: 13px; touch-action: manipulation; }
 
-  #clickBtn {
-    padding: 14px 36px;
-    font-size: 13px;
-  }
+  /* puntos de cooldown más grandes para touch */
+  .velDot { width: 9px; height: 9px; }
 
-  #barraInferior {
-    flex-shrink: 0;
-  }
+  #loreLine { font-size: 9px; max-width: 90vw; text-align: center; }
 
-  /* Panels en mobile */
-  #leftPanel  { padding: 14px 12px; }
-  #rightPanel { padding: 14px 12px; }
+  /* barra de fragmentos */
+  #points { font-size: 10px; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+  /* botón mejorar click */
+  #mejorarClickBtn { font-size: 9px; padding: 6px 14px; touch-action: manipulation; }
+
+  /* botón recolectar */
+  #recolectarBtn { min-width: 140px; font-size: 9px; touch-action: manipulation; }
+
+  /* ── PANEL IZQUIERDO (progreso) ── */
+  #leftPanel {
+    padding: 12px 14px;
+    flex-direction: column;
+  }
+  .prog-item { padding: 4px 0; }
+  .prog-label { font-size: 9px; }
+
+  /* ── PANEL DERECHO (generadores) ── */
+  #rightPanel {
+    padding: 12px 12px;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .genBox { padding: 10px 12px; gap: 4px; }
+  .genLabel { font-size: 10px; }
+  .genNums { font-size: 9px; }
+  .genInfo { font-size: 8px; }
+  .genBox button { padding: 6px 12px; font-size: 8px; }
+
+  /* Panel B (Prisma/Catalizador) */
+  .resetPanel { padding: 12px 14px; }
+  .resetTitle { font-size: 10px; }
+  .resetStat span:last-child { font-size: 12px; }
+
+  /* ── OVERLAYS en mobile ── */
+  .vistaOverlay {
+    padding: 0;
+  }
+  #arbolCanvas { min-height: 60vh; }
+  #arbolHeader { padding: 12px 16px 10px; }
+  #arbolTitulo { font-size: 9px; letter-spacing: 2px; }
+
+  #ajustesContent, #statsContent { padding: 16px 20px; }
+  .settSection { gap: 8px; }
+  .settBtn { font-size: 8px; padding: 7px 14px; }
+  .settSlider span { font-size: 9px; }
+
+  /* Notificaciones en mobile */
+  .notif {
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    width: 85vw;
+    font-size: 10px;
+  }
+  .notif.visible { transform: translateX(-50%) translateY(0); }
+
+  /* Tutorial */
+  #tutorialBox { bottom: 50px; width: 85vw; }
+
+  /* Feedback modal */
+  #feedbackBox { padding: 20px 18px; width: 88vw; }
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -2066,3 +2136,29 @@ button {
 /* ══ FEEDBACK MODAL — mejoras ════════════════════════════════ */
 #feedbackTexto::placeholder { color: rgba(255,255,255,0.2); }
 #feedbackBox { animation: colapsoTextAppear 0.3s ease forwards; }
+
+/* ══ GENERATOR PROGRESS BAR ════════════════════════════════ */
+.genProgressWrap {
+  position: relative;
+  height: 3px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 2px;
+  margin: 4px 0 2px;
+  overflow: hidden;
+}
+.genProgressBar {
+  height: 100%;
+  width: 0%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  background: linear-gradient(90deg, rgba(0,212,255,0.3), rgba(0,212,255,0.6));
+}
+.genProgressLabel {
+  position: absolute;
+  right: 0; top: -13px;
+  font-size: 7px;
+  color: rgba(0,212,255,0.5);
+  font-family: var(--font-display);
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}

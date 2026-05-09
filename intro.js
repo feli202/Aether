@@ -76,15 +76,20 @@ function formatTiempo(seg) {
 }
 
 (function initMobileTabs() {
-  const tabs   = document.querySelectorAll(".mobileTab");
-  const panels = document.querySelectorAll(".mobilePanel");
-  tabs.forEach(tab => {
-    tab.addEventListener("click", () => {
-      tabs.forEach(t => t.classList.remove("active"));
-      panels.forEach(p => p.classList.remove("active"));
-      tab.classList.add("active");
-      const target = document.querySelector("[data-panel='" + tab.dataset.tab + "']");
-      if (target) target.classList.add("active");
-    });
-  });
+  const tabs = document.querySelectorAll(".mobileTab");
+  if (!tabs.length) return;
+
+  function activarTab(tabEl) {
+    tabs.forEach(t => t.classList.remove("active"));
+    document.querySelectorAll("#leftPanel,#main,#rightPanel").forEach(p => p.classList.remove("tabActive"));
+    tabEl.classList.add("active");
+    const target = document.querySelector("[data-panel='" + tabEl.dataset.tab + "']");
+    if (target) target.classList.add("tabActive");
+  }
+
+  tabs.forEach(tab => tab.addEventListener("click", () => activarTab(tab)));
+
+  // Activar tab de main por defecto
+  const mainTab = [...tabs].find(t => t.dataset.tab === "main");
+  if (mainTab) activarTab(mainTab);
 })();
