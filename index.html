@@ -80,10 +80,13 @@
         <div class="velDot" id="dot3"></div>
       </div>
       <button id="mejorarClickBtn">Mejorar Click</button>
-      <button id="recolectarBtn">
-        <span id="recolectarLabel">Recolectar</span>
-        <span id="recolectarBarWrap"><span id="recolectarBar"></span></span>
-      </button>
+      <div id="recolectarWrap">
+        <button id="recolectarBtn">
+          <span id="recolectarLabel">Recolectar</span>
+          <span id="recolectarBarWrap"><span id="recolectarBar"></span></span>
+        </button>
+        <div id="recolectarTooltip"></div>
+      </div>
       <div id="idleStats" style="display:none"><div id="tickspeedBig"></div></div>
       <button id="prestigeBtn" style="display:none">FRACTURAR SEMI-AETHER</button>
     </div>
@@ -96,10 +99,13 @@
     </div>
 
     <div id="barraInferior">
-      <button class="barraBtn" id="btnAbrirArbol"><span class="barraIcon">◈</span>TREE</button>
-      <button class="barraBtn" id="btnAbrirLogros"><span class="barraIcon">◆</span>ACHIEVEMENTS</button>
-      <button class="barraBtn" id="btnAbrirStats"><span class="barraIcon">◎</span>STATS</button>
-      <button class="barraBtn" id="btnAbrirAjustes"><span class="barraIcon">⚙</span>SETTINGS</button>
+      <div id="barraLeft"></div>
+      <button class="barraBtn" id="btnAbrirArbol"><span class="barraIcon">Ψ</span>TREE</button>
+      <div id="barraRight">
+        <button class="barraBtn" id="btnAbrirLogros"><span class="barraIcon">◆</span>ACHIEVEMENTS</button>
+        <button class="barraBtn" id="btnAbrirStats"><span class="barraIcon">◎</span>STATS</button>
+        <button class="barraBtn" id="btnAbrirAjustes"><span class="barraIcon">⚙</span>SETTINGS</button>
+      </div>
     </div>
 
     <!-- Tutorial box -->
@@ -119,7 +125,7 @@
   <!-- OVERLAY ARBOL -->
   <div id="vistaArbol" class="vistaOverlay" style="display:none">
     <div id="arbolHeader">
-      <div id="arbolTitulo"><span class="arbolTitleGlyph">◈</span><span id="txtArbolTitulo">SKILL TREE</span></div>
+      <div id="arbolTitulo"><span class="arbolTitleGlyph">Ψ</span><span id="txtArbolTitulo">SKILL TREE</span></div>
       <div id="arbolOrbCount"></div>
       <button id="btnCentrarArbol" class="btnSecundario">⊙ <span id="txtCentrar">CENTER</span></button>
       <button id="btnCerrarArbol" class="btnCerrar">✕ <span id="txtCerrarArbol">CLOSE</span></button>

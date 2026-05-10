@@ -5,6 +5,32 @@ Cada sesión: descargar los outputs → copiarlos a la carpeta del proyecto en V
 
 ---
 
+## v0.0.15 — UX / Onboarding + Visual
+
+### engine.js
+- Primera recolección: pulso visual en botón TREE (4 ciclos, clase `pulse-hint`) — onboarding visual directo
+- Consejo post-primera-rec usa `T()` bilingüe: guía explícita a Poder I
+
+### ui.js
+- Botón Harvest: tooltip nativo con `"N / 1000 (X restantes)"` — desaparece con nodo `romper` activo
+- Botones secundarios de barra (Logros, Stats, Settings): solo ícono + tooltip CSS en hover
+- Partículas: regeneración con 60% `randomY` aleatorio — distribuidas por toda la pantalla, no solo abajo
+
+### style.css
+- Nodos de progreso: borde `0.18→0.35`, fondo `0.03→0.08` — más contraste en pantallas con bajo brillo
+- Labels de progreso: opacidad `0.22→0.45`
+- Conectores: `0.1→0.22`
+- `#btnAbrirArbol.pulse-hint`: animación de onboarding 4 ciclos
+- Barra inferior: grid `220px | 1fr | 300px` alineado a columnas del juego
+- Botón TREE: destacado con glow, símbolo Ψ pulsante
+
+### config.js
+- VERSION `v0.0.15`, SAVE_KEY `_aether_v0015`
+- Strings `consejo_poder1_titulo` / `consejo_poder1_desc` en ES y EN
+- `desc_poder1` actualizado: "Click +3 frags base"
+
+---
+
 ## v0.0.13 — Balance late game + fixes UI
 
 ### engine.js

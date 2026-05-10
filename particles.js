@@ -56,7 +56,7 @@ const ParticlesBG = {
       z, size, r, g, b,
       vx:  (Math.random() - 0.5) * 0.18 * (0.15 + z),
       vy:  -(0.04 + Math.random() * 0.22) * (0.15 + z * 0.85),
-      life: 0.5 + Math.random() * 0.5,
+      life: 0.7 + Math.random() * 0.3,
       flicker: Math.random() * Math.PI * 2,
       fSpd: 0.4 + Math.random() * 1.8,
     };
@@ -75,7 +75,7 @@ const ParticlesBG = {
       p.flicker += p.fSpd * 0.016;
       const px = p.x + this.mouseX * p.z * 10;
       const py = p.y + this.mouseY * p.z * 6;
-      if (p.life <= 0 || py < -30) { this.particles[i] = this.newParticle(false); continue; }
+      if (p.life <= 0 || py < -30) { this.particles[i] = this.newParticle(Math.random() < 0.6); continue; }
       const flick   = Math.sin(p.flicker) * 0.18 + 0.82;
       const opacity = p.life * flick * (0.5 + p.z * 0.5);
       this.draw(px, py, p.size, p.r, p.g, p.b, opacity);

@@ -53,11 +53,18 @@ function clicksPs(){ return S.arbol["nucleoEterno"] ? 4 : S.arbol["auto"] ? 2 : 
 function nivelClickTotal() { return S.click.nivelFrags + S.click.nivelOrbes; }
 
 function poderClick() {
-  // ×0.8 por nivel — click crece suavemente, el árbol multiplica encima
-  // Siempre suma al menos 1 por nivel (con bonusClickFlat de poder1 esto es visible)
-  const base = 1 + nivelClickTotal() * 0.8 + bonusClickFlat();
-  let mult = multClickArbol();
-  return Math.floor(base * mult);
+  // Crecimiento plano entero — sin decimales nunca
+  // Niv 1–10: +2 por nivel  → 3, 5, 7, 9, 11, 13, 15, 17, 19, 21
+  // Niv 11+:  +1 por nivel  → 22, 23, 24... (softcap, Capa 1 lo rompe)
+  const niv = nivelClickTotal();
+  let base;
+  if (niv <= 10) {
+    base = 1 + niv * 2;
+  } else {
+    base = 21 + (niv - 10);
+  }
+  base += bonusClickFlat();
+  return Math.floor(base * multClickArbol());
 }
 
 var MEJORAS_FRAGS = 5;
@@ -201,7 +208,13 @@ function accionRecolectar() {
   chequearLogros();
   if (S.stats.recolecciones === 1) {
     notif(T("notif_primera_rec"), T("notif_primera_rec_desc"), "#a78bfa");
-    setTimeout(() => notif("Consejo", "Poder I o Velocidad I en el Árbol.", "#34d399"), 2500);
+    setTimeout(() => notif(T("consejo_poder1_titulo"), T("consejo_poder1_desc"), "#34d399"), 2500);
+    // Pulso visual en botón TREE — onboarding primer orbe
+    const treeBtn = document.getElementById("btnAbrirArbol");
+    if (treeBtn) {
+      treeBtn.classList.add("pulse-hint");
+      treeBtn.addEventListener("animationend", () => treeBtn.classList.remove("pulse-hint"), { once: true });
+    }
   }
 }
 

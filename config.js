@@ -2,9 +2,9 @@
 // AETHER — CONFIG.JS
 // ============================================================
 
-const VERSION  = "v0.0.13";
+const VERSION  = "v0.0.15";
 // En GitHub Pages varios repos comparten origen — prefijamos con el path
-const SAVE_KEY = (location.pathname.replace(/\/index\.html$/, "").replace(/\/$/, "") || "") + "_aether_v0011";
+const SAVE_KEY = (location.pathname.replace(/\/index\.html$/, "").replace(/\/$/, "") || "") + "_aether_v0015";
 
 // ── NUMBER FORMATTING ────────────────────────────────────────
 const SUFFIXES = ["","K","M","B","T","Qa","Qi","Sx","Sp","Oc","No"];
@@ -197,6 +197,8 @@ var STRINGS = {
     umbral_roto_desc:          "Los Orbes escalan con tus fragmentos",
     notif_primera_rec:         "¡Primera Recolección!",
     notif_primera_rec_desc:    "Ganaste un Orbe. Abre el ÁRBOL o comprá un Condensador.",
+    consejo_poder1_titulo:     "⬡ Abre el ÁRBOL",
+    consejo_poder1_desc:       "Con 1 Orbe comprá Poder I — tu click pasa de 1 a 3 frags.",
     notif_g2a_unlock:          "Resonador Cuántico desbloqueado",
     notif_g2a_unlock_desc:     "Tu segundo generador está disponible",
     notif_g3a_unlock:          "Acelerador de Fase desbloqueado",
@@ -376,7 +378,7 @@ var STRINGS = {
     nodo_eterno:         "Eterno",
     nodo_reset_etereo:   "se resetea con Prisma",
     nodo_reset_eterno:   "solo Prestige lo borra",
-    desc_poder1:    "Click +1 frag base",
+    desc_poder1:    "Click +3 frags base",
     desc_poder2:    "Click x1.2",
     desc_poder3:    "Click x1.35",
     desc_poder4:    "Click x2",
@@ -544,6 +546,8 @@ var STRINGS = {
     umbral_roto_desc:          "Orbs now scale with your Fragments",
     notif_primera_rec:         "First Harvest!",
     notif_primera_rec_desc:    "You gained an Orb. Open the TREE or buy a Condenser.",
+    consejo_poder1_titulo:     "⬡ Open the TREE",
+    consejo_poder1_desc:       "Spend 1 Orb on Power I — your click goes from 1 to 3 frags.",
     notif_g2a_unlock:          "Quantum Resonator unlocked",
     notif_g2a_unlock_desc:     "Your second generator is available",
     notif_g3a_unlock:          "Phase Accelerator unlocked",
@@ -723,7 +727,7 @@ var STRINGS = {
     nodo_eterno:         "Eternal",
     nodo_reset_etereo:   "resets with Prism",
     nodo_reset_eterno:   "only Prestige removes it",
-    desc_poder1:    "Click +1 base frag",
+    desc_poder1:    "Click +3 base frags",
     desc_poder2:    "Click x1.2",
     desc_poder3:    "Click x1.35",
     desc_poder4:    "Click x2",

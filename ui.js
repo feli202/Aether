@@ -75,6 +75,7 @@ var UI = {
     document.getElementById("btnCerrarStats")?.addEventListener("click",   () => this.cerrarOverlay("stats"));
     document.getElementById("btnCentrarArbol")?.addEventListener("click",  () => ArbolGrafo.centrar());
 
+
     document.addEventListener("keydown", e => {
       if (e.key === "Escape") {
         ["arbol","logros","ajustes","stats"].forEach(o => this.cerrarOverlay(o));
@@ -160,12 +161,38 @@ var UI = {
     if (pb) pb.innerText = T("prestige_btn");
 
     // Barra inferior
-    const barKeys  = ["arbol", "logros", "estadisticas", "ajustes"];
-    const barIcons = ["◈", "◆", "◎", "⚙"];
+    const barKeys   = ["arbol", "logros", "estadisticas", "ajustes"];
+    const barIcons  = ["Ψ", "◆", "◎", "⚙"];
     document.querySelectorAll(".barraBtn").forEach((btn, i) => {
       if (!barKeys[i]) return;
-      btn.innerHTML = "<span class='barraIcon'>" + barIcons[i] + "</span>" + T(barKeys[i]);
+      if (i === 0) {
+        // TREE — ícono + texto
+        btn.innerHTML = "<span class='barraIcon'>" + barIcons[i] + "</span>" + T(barKeys[i]);
+      } else {
+        // Solo ícono + tooltip traducido
+        btn.innerHTML = "<span class='barraIcon'>" + barIcons[i] + "</span>";
+        btn.setAttribute("data-tooltip", T(barKeys[i]));
+      }
     });
+
+    // Tooltip JS para los 3 botones secundarios
+    (function() {
+      const tip = document.createElement("div");
+      tip.id = "barraTooltip";
+      document.body.appendChild(tip);
+      document.querySelectorAll("#barraRight .barraBtn").forEach(btn => {
+        btn.addEventListener("mouseenter", () => {
+          const label = btn.getAttribute("data-tooltip");
+          if (!label) return;
+          tip.textContent = label;
+          tip.style.opacity = "1";
+          const r = btn.getBoundingClientRect();
+          tip.style.left = (r.left + r.width / 2 - tip.offsetWidth / 2) + "px";
+          tip.style.top  = (r.top - tip.offsetHeight - 8) + "px";
+        });
+        btn.addEventListener("mouseleave", () => { tip.style.opacity = "0"; });
+      });
+    })();
 
     // Mobile tabs
     const tabKeys = { main:"generar", gens:"generadores", progreso:"progreso" };
@@ -1254,10 +1281,21 @@ var UI = {
       const listo = S.arbol["romper"] ? S.fragmentos > 0 : frags >= CONFIG.recolectar.umbral;
       const pct   = S.arbol["romper"] ? 100 : Math.min(100, (frags / CONFIG.recolectar.umbral) * 100);
       recBtn.classList.toggle("ready", listo);
-      // Opacidad y color se gradúan con el progreso
       recBtn.style.opacity = listo ? "1" : (0.3 + (pct / 100) * 0.5).toFixed(2);
       recBtn.style.pointerEvents = listo ? "auto" : (pct > 0 ? "auto" : "none");
       if (recBar) recBar.style.width = pct + "%";
+      // Tooltip con número — usa div wrapper, funciona aunque pointer-events:none
+      const recTip = document.getElementById("recolectarTooltip");
+      if (recTip) {
+        if (!S.arbol["romper"] && !listo) {
+          const faltan = Math.max(0, CONFIG.recolectar.umbral - frags);
+          recTip.textContent = fmt(Math.floor(frags)) + " / " + fmt(CONFIG.recolectar.umbral) + "  (" + fmt(Math.ceil(faltan)) + " " + T("fragmentos") + ")";
+          recTip.style.display = "block";
+        } else {
+          recTip.textContent = "";
+          recTip.style.display = "none";
+        }
+      }
     }
 
     // gens A
